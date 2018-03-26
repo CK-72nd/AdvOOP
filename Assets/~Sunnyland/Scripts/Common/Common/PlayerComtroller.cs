@@ -46,10 +46,10 @@ namespace SunnyLand.Player
         public FloatCallback onClimb;
 
         private Vector3 groundNormal = Vector3.up;
-        private Vector3 moveDirection;
         private int currentJump = 0;
 
-        private float vertical, horizontal;
+        private float inputH, inputV;
+
 
         #region Unity Functions
         // Use this for initialization
@@ -63,8 +63,8 @@ namespace SunnyLand.Player
         // Update is called once per frame
         void Update()
         {
-            // Apply gravity to move direction
-            moveDirection.y += Physics.gravity.y * Time.deltaTime;
+            PerformMove();
+            PerformJump();
         }
 
         void FixedUpdate()
@@ -82,12 +82,47 @@ namespace SunnyLand.Player
 
         #region Custom Functions
 
+        void PerformMove()
+        {
+            if (isOnSlope && // If the player is standing on a slope AND
+               inputH == 0 && // No input is on horizontal AND
+               isGrounded) // Player is grounded
+            {
+                // Cancel the velocity
+                rigid.velocity = Vector3.zero;
+            }
+
+            Vector3 right = Vector3.Cross(groundNormal, Vector3.back);
+            rigid.AddForce(right * inputH * speed);
+
+            // Limit the velocity max velocity
+            LimitVelocity();
+        }
+        void PerformJump()
+        {
+            // If player is jumping
+            if (isJumping)
+            {
+                // If player is allowed to jump
+                if (currentJump < maxJumpCount)
+                {
+                    // Increase the jump count
+                    currentJump++;
+                    // Perform jump logic
+                    rigid.AddForce(Vector2.up * jumpHeight, ForceMode2D.Impulse);
+                }
+                // Reset jump input
+                isJumping = false;
+            }
+        }
+
         // Check to see if ray hit object is ground
         bool CheckSlope(RaycastHit2D hit)
         {
             // Grab the angle in degrees of the surface we're standing on
             float slopeAngle = Vector3.Angle(Vector3.up, hit.normal);
             // If the angle is greater than max
+            if(slopeAngle > maxSlopeAngle)
             {
                 // Make player slide down surface
                 rigid.AddForce(Physics.gravity);
@@ -154,9 +189,21 @@ namespace SunnyLand.Player
             // Set Hit to 2D Raycast
             foreach (var hit in hits)
             {
+                // Detect if on a slope
+                if (Mathf.Abs(hit.normal.x) > 0.1f)
+                {
+                    // Set gravity to zero
+                    rigid.gravityScale = 0;
+                }
+                else
+                {
+                    // Set gravity to one
+                    rigid.gravityScale = 1;
+                }
+
                 if (CheckGround(hit))
                 {
-                    // We found the ground! So exit the function
+                    // We found the ground! So exit the loop
                     break;
                 }
 
@@ -184,13 +231,25 @@ namespace SunnyLand.Player
             }
         }
 
+        void EnablePhysics()
+        {
+            rigid.simulated = true;
+            rigid.gravityScale = 1;
+        }
+
+        void DisablePhysics()
+        {
+            rigid.simulated = false;
+            rigid.gravityScale = 0;
+        }
+
         public void Jump()
         {
-            // If currentJump is less than max jump
-            if (currentJump < maxJumpCount)
+            isJumping = true;
+
+            if (onJump != null)
             {
-                // Increment currentJump
-                // Add force to player (using Impulse)
+                onJump.Invoke();
             }
         }
 
@@ -201,14 +260,20 @@ namespace SunnyLand.Player
 
         public void Move(float horizontal)
         {
-            // If horizontal > 0
-            // Flip Character
-            // If horizontal < 0
-            // Flip Character
+            if (horizontal != 0)
+            {
+                rend.flipX = horizontal < 0;
+            }
 
-            // Add force to player in the right direction
-            // Limit Velocity
+            inputH = horizontal;
+
+            // Invoke event
+            if (onMove != null)
+            {
+                onMove.Invoke(inputH);
+            }
         }
+    }
         #endregion
     }
-}
+
