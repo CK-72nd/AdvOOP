@@ -10,7 +10,7 @@ namespace SunnyLand.Player
     {
         private PlayerComtroller player;
 
-        private float inputH;
+        private float inputH, inputV; // << THIS,
         private bool isJumping;
         private bool isCrouching;
 
@@ -23,19 +23,37 @@ namespace SunnyLand.Player
         // Update is called once per frame
         void Update()
         {
+            // TEST
+            if (Input.GetKeyDown(KeyCode.U))
+            {
+                // Hurt yourself when you press U
+                player.Hurt(10, new Vector2(1, 1));
+            }
+            ///////
+
             GetInput();
             player.Move(inputH);
-            if(isJumping)
+            player.Climb(inputV); // << THIS,
+            if (isJumping)
             {
                 player.Jump();
+            }
+            if (isCrouching)
+            {
+                player.Crouch();
+            }
+            else
+            {
+                player.UnCrouch();
             }
         }
 
         void GetInput()
         {
             inputH = Input.GetAxis("Horizontal");
+            inputV = Input.GetAxis("Vertical"); // << AND THIS
             isJumping = Input.GetKeyDown(KeyCode.Space);
-            isCrouching = Input.GetKeyDown(KeyCode.LeftCommand);
+            isCrouching = Input.GetKeyDown(KeyCode.LeftControl);
         }
     }
 }

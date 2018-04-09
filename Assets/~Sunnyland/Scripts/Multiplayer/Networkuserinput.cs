@@ -4,9 +4,9 @@ using UnityEngine;
 
 using UnityEngine.Networking;
 
-namespace SunnyLand
+namespace SunnyLand.Player
 {
-    [RequireComponent(typeof(PlayerController))]
+    [RequireComponent(typeof(PlayerComtroller))]
     public class NetworkUserInput : NetworkBehaviour
     {
 
